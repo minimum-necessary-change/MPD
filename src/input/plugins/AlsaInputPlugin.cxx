@@ -30,11 +30,9 @@
 #include "../InputPlugin.hxx"
 #include "../AsyncInputStream.hxx"
 #include "event/Call.hxx"
-#include "thread/Cond.hxx"
 #include "config/Block.hxx"
 #include "util/Domain.hxx"
 #include "util/RuntimeError.hxx"
-#include "util/StringCompare.hxx"
 #include "util/ASCII.hxx"
 #include "util/DivideString.hxx"
 #include "AudioParser.hxx"
@@ -486,4 +484,5 @@ const struct InputPlugin input_plugin_alsa = {
 	alsa_input_init,
 	nullptr,
 	alsa_input_open,
+	nullptr
 };

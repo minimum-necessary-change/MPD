@@ -28,15 +28,10 @@
 #include "system/PeriodClock.hxx"
 #include "util/Compiler.h"
 
-#include <utility>
 #include <exception>
 #include <memory>
 #include <string>
 #include <map>
-
-#ifndef NDEBUG
-#include <assert.h>
-#endif
 
 #include <stdint.h>
 
@@ -232,7 +227,7 @@ public:
 	AudioOutputControl &operator=(const AudioOutputControl &) = delete;
 
 	/**
-	 * Throws #std::runtime_error on error.
+	 * Throws on error.
 	 */
 	void Configure(const ConfigBlock &block);
 
@@ -383,7 +378,7 @@ public:
 	/**
 	 * Caller must lock the mutex.
 	 *
-	 * Throws #std::runtime_error on error.
+	 * Throws on error.
 	 */
 	void InternalOpen2(AudioFormat in_audio_format);
 

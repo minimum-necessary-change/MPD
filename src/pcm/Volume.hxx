@@ -38,7 +38,7 @@ static constexpr unsigned PCM_VOLUME_BITS = 10;
 /**
  * This value means "100% volume".
  */
-static constexpr unsigned PCM_VOLUME_1 = 1024;
+static constexpr unsigned PCM_VOLUME_1 = 1u << PCM_VOLUME_BITS;
 static constexpr int PCM_VOLUME_1S = PCM_VOLUME_1;
 
 /**
@@ -58,7 +58,7 @@ pcm_volume_to_float(int volume) noexcept
 }
 
 /**
- * A class that converts samples from one format to another.
+ * Software volume implementation.
  */
 class PcmVolume {
 	SampleFormat format;
@@ -92,11 +92,12 @@ public:
 	/**
 	 * Opens the object, prepare for Apply().
 	 *
-	 * Throws std::runtime_error on error.
+	 * Throws on error.
 	 *
-	 * @param format the sample format
+	 * @param format the input sample format
+	 * @return the output sample format
 	 */
-	void Open(SampleFormat format);
+	SampleFormat Open(SampleFormat format);
 
 	/**
 	 * Closes the object.  After that, you may call Open() again.

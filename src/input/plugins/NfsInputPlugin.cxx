@@ -22,7 +22,6 @@
 #include "../InputPlugin.hxx"
 #include "lib/nfs/Glue.hxx"
 #include "lib/nfs/FileReader.hxx"
-#include "util/ASCII.hxx"
 
 /**
  * Do not buffer more than this number of bytes.  It should be a
@@ -232,4 +231,5 @@ const InputPlugin input_plugin_nfs = {
 	input_nfs_init,
 	input_nfs_finish,
 	input_nfs_open,
+	nullptr
 };

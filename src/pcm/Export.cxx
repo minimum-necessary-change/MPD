@@ -18,13 +18,15 @@
  */
 
 #include "Export.hxx"
-#include "AudioFormat.hxx"
 #include "Order.hxx"
 #include "Pack.hxx"
+#include "Silence.hxx"
 #include "util/ByteReverse.hxx"
 #include "util/ConstBuffer.hxx"
+#include "util/WritableBuffer.hxx"
 
 #include <assert.h>
+#include <string.h>
 
 void
 PcmExport::Open(SampleFormat sample_format, unsigned _channels,
@@ -32,10 +34,9 @@ PcmExport::Open(SampleFormat sample_format, unsigned _channels,
 {
 	assert(audio_valid_sample_format(sample_format));
 
+	src_sample_format = sample_format;
 	channels = _channels;
-	alsa_channel_order = params.alsa_channel_order
-		? sample_format
-		: SampleFormat::UNDEFINED;
+	alsa_channel_order = params.alsa_channel_order;
 
 #ifdef ENABLE_DSD
 	assert(params.dsd_mode != DsdMode::DOP ||
@@ -90,6 +91,16 @@ PcmExport::Open(SampleFormat sample_format, unsigned _channels,
 		if (sample_size > 1)
 			reverse_endian = sample_size;
 	}
+
+	/* prepare a moment of silence for GetSilence() */
+	char buffer[sizeof(silence_buffer)];
+	const size_t buffer_size = GetInputBlockSize();
+	assert(buffer_size < sizeof(buffer));
+	PcmSilence({buffer, buffer_size}, src_sample_format);
+	auto s = Export({buffer, buffer_size});
+	assert(s.size < sizeof(silence_buffer));
+	silence_size = s.size;
+	memcpy(silence_buffer, s.data, s.size);
 }
 
 void
@@ -116,11 +127,11 @@ PcmExport::Reset() noexcept
 }
 
 size_t
-PcmExport::GetFrameSize(const AudioFormat &audio_format) const noexcept
+PcmExport::GetOutputFrameSize() const noexcept
 {
 	if (pack24)
 		/* packed 24 bit samples (3 bytes per sample) */
-		return audio_format.channels * 3;
+		return channels * 3;
 
 #ifdef ENABLE_DSD
 	switch (dsd_mode) {
@@ -142,7 +153,59 @@ PcmExport::GetFrameSize(const AudioFormat &audio_format) const noexcept
 	}
 #endif
 
-	return audio_format.GetFrameSize();
+	return GetInputFrameSize();
+}
+
+size_t
+PcmExport::GetInputBlockSize() const noexcept
+{
+#ifdef ENABLE_DSD
+	switch (dsd_mode) {
+	case DsdMode::NONE:
+		break;
+
+	case DsdMode::U16:
+		return dsd16_converter.GetInputBlockSize();
+
+	case DsdMode::U32:
+		return dsd32_converter.GetInputBlockSize();
+		break;
+
+	case DsdMode::DOP:
+		return dop_converter.GetInputBlockSize();
+	}
+#endif
+
+	return GetInputFrameSize();
+}
+
+size_t
+PcmExport::GetOutputBlockSize() const noexcept
+{
+#ifdef ENABLE_DSD
+	switch (dsd_mode) {
+	case DsdMode::NONE:
+		break;
+
+	case DsdMode::U16:
+		return dsd16_converter.GetOutputBlockSize();
+
+	case DsdMode::U32:
+		return dsd32_converter.GetOutputBlockSize();
+		break;
+
+	case DsdMode::DOP:
+		return dop_converter.GetOutputBlockSize();
+	}
+#endif
+
+	return GetOutputFrameSize();
+}
+
+ConstBuffer<void>
+PcmExport::GetSilence() const noexcept
+{
+	return {silence_buffer, silence_size};
 }
 
 unsigned
@@ -204,9 +267,9 @@ PcmExport::Params::CalcInputSampleRate(unsigned sample_rate) const noexcept
 ConstBuffer<void>
 PcmExport::Export(ConstBuffer<void> data) noexcept
 {
-	if (alsa_channel_order != SampleFormat::UNDEFINED)
+	if (alsa_channel_order)
 		data = ToAlsaChannelOrder(order_buffer, data,
-					  alsa_channel_order, channels);
+					  src_sample_format, channels);
 
 #ifdef ENABLE_DSD
 	switch (dsd_mode) {
@@ -267,7 +330,7 @@ PcmExport::Export(ConstBuffer<void> data) noexcept
 }
 
 size_t
-PcmExport::CalcSourceSize(size_t size) const noexcept
+PcmExport::CalcInputSize(size_t size) const noexcept
 {
 	if (pack24)
 		/* 32 bit to 24 bit conversion (4 to 3 bytes) */

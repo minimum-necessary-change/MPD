@@ -33,7 +33,6 @@
 #include <stdint.h>
 
 template<typename T> struct ConstBuffer;
-struct AudioFormat;
 
 /**
  * An object that handles export of PCM samples to some instance
@@ -79,6 +78,15 @@ class PcmExport {
 	 */
 	PcmBuffer reverse_buffer;
 
+	size_t silence_size;
+
+	uint8_t silence_buffer[64]; /* worst-case size */
+
+	/**
+	 * The sample format of input data.
+	 */
+	SampleFormat src_sample_format;
+
 	/**
 	 * The number of channels.
 	 */
@@ -87,12 +95,8 @@ class PcmExport {
 	/**
 	 * Convert the given buffer from FLAC channel order to ALSA
 	 * channel order using ToAlsaChannelOrder()?
-	 *
-	 * If this value is SampleFormat::UNDEFINED, then no channel
-	 * reordering is applied, otherwise this is the input sample
-	 * format.
 	 */
-	SampleFormat alsa_channel_order;
+	bool alsa_channel_order;
 
 #ifdef ENABLE_DSD
 public:
@@ -184,10 +188,38 @@ public:
 	void Reset() noexcept;
 
 	/**
+	 * Calculate the size of one input frame.
+	 */
+	gcc_pure
+	size_t GetInputFrameSize() const noexcept {
+		return channels * sample_format_size(src_sample_format);
+	}
+
+	/**
 	 * Calculate the size of one output frame.
 	 */
 	gcc_pure
-	size_t GetFrameSize(const AudioFormat &audio_format) const noexcept;
+	size_t GetOutputFrameSize() const noexcept;
+
+	/**
+	 * @return the size of one input block in bytes
+	 */
+	gcc_pure
+	size_t GetInputBlockSize() const noexcept;
+
+	/**
+	 * @return the size of one output block in bytes
+	 */
+	gcc_pure
+	size_t GetOutputBlockSize() const noexcept;
+
+	/**
+	 * @return one block of silence output; its size is the same
+	 * as GetOutputBlockSize(); the pointer is valid as long as
+	 * this #PcmExport object exists and until the next Open()
+	 * call
+	 */
+	ConstBuffer<void> GetSilence() const noexcept;
 
 	/**
 	 * Export a PCM buffer.
@@ -204,7 +236,7 @@ public:
 	 * pcm_export() source buffer.
 	 */
 	gcc_pure
-	size_t CalcSourceSize(size_t dest_size) const noexcept;
+	size_t CalcInputSize(size_t dest_size) const noexcept;
 };
 
 #endif

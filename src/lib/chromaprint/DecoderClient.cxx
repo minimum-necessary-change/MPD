@@ -28,6 +28,9 @@ ChromaprintDecoderClient::~ChromaprintDecoderClient() noexcept = default;
 void
 ChromaprintDecoderClient::Finish()
 {
+	if (error)
+		std::rethrow_exception(error);
+
 	if (!ready)
 		throw std::runtime_error("Decoding failed");
 
@@ -41,7 +44,8 @@ ChromaprintDecoderClient::Finish()
 }
 
 void
-ChromaprintDecoderClient::Ready(AudioFormat audio_format, bool, SignedSongTime)
+ChromaprintDecoderClient::Ready(AudioFormat audio_format, bool,
+				SignedSongTime) noexcept
 {
 	/* feed the first two minutes into libchromaprint */
 	remaining_bytes = audio_format.TimeToSize(std::chrono::minutes(2));
@@ -84,7 +88,13 @@ ChromaprintDecoderClient::SubmitData(InputStream *,
 }
 
 size_t
-ChromaprintDecoderClient::Read(InputStream &is, void *buffer, size_t length)
+ChromaprintDecoderClient::Read(InputStream &is,
+			       void *buffer, size_t length) noexcept
 {
-	return is.LockRead(buffer, length);
+	try {
+		return is.LockRead(buffer, length);
+	} catch (...) {
+		error = std::current_exception();
+		return 0;
+	}
 }

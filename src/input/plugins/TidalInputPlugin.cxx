@@ -34,7 +34,6 @@
 #include "util/StringCompare.hxx"
 #include "Log.hxx"
 
-#include <stdexcept>
 #include <memory>
 
 static constexpr Domain tidal_domain("tidal");
@@ -180,6 +179,8 @@ InitTidalInput(EventLoop &event_loop, const ConfigBlock &block)
 	if (password == nullptr)
 		throw PluginUnconfigured("No Tidal password configured");
 
+	FormatWarning(tidal_domain, "The Tidal input plugin is deprecated because Tidal has changed the protocol and doesn't share documentation");
+
 	tidal_audioquality = block.GetBlockValue("audioquality", "HIGH");
 
 	tidal_session = new TidalSessionManager(event_loop, base_url, token,
@@ -249,5 +250,6 @@ const InputPlugin tidal_input_plugin = {
 	InitTidalInput,
 	FinishTidalInput,
 	OpenTidalInput,
+	nullptr,
 	ScanTidalTags,
 };

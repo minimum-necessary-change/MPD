@@ -24,15 +24,13 @@
 #include "AudioFormat.hxx"
 #include "util/ConstBuffer.hxx"
 
-#include <stdexcept>
-
 class VolumeFilter final : public Filter {
 	PcmVolume pv;
 
 public:
 	explicit VolumeFilter(const AudioFormat &audio_format)
 		:Filter(audio_format) {
-		pv.Open(out_audio_format.format);
+		out_audio_format.format = pv.Open(out_audio_format.format);
 	}
 
 	unsigned GetVolume() const noexcept {

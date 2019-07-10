@@ -21,7 +21,6 @@
 #include "input/ThreadInputStream.hxx"
 #include "input/InputPlugin.hxx"
 #include "system/Error.hxx"
-#include "util/ASCII.hxx"
 
 #include <libmms/mmsx.h>
 
@@ -110,4 +109,5 @@ const InputPlugin input_plugin_mms = {
 	nullptr,
 	nullptr,
 	input_mms_open,
+	nullptr
 };

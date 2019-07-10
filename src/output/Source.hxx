@@ -20,7 +20,6 @@
 #ifndef AUDIO_OUTPUT_SOURCE_HXX
 #define AUDIO_OUTPUT_SOURCE_HXX
 
-#include "util/Compiler.h"
 #include "SharedPipeConsumer.hxx"
 #include "AudioFormat.hxx"
 #include "ReplayGainMode.hxx"
@@ -147,7 +146,7 @@ public:
 	/**
 	 * Ensure that ReadTag() or PeekData() return any input.
 	 *
-	 * Throws std::runtime_error on error
+	 * Throws on error
 	 *
 	 * @param mutex the #Mutex which protects the
 	 * #SharedPipeConsumer; it is locked by the caller, and may be
