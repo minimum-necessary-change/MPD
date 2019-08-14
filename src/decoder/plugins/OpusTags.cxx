@@ -22,6 +22,7 @@
 #include "lib/xiph/XiphTags.hxx"
 #include "tag/Handler.hxx"
 #include "tag/ParseName.hxx"
+#include "util/ASCII.hxx"
 #include "ReplayGainInfo.hxx"
 #include "util/NumberParser.hxx"
 #include "util/StringView.hxx"
@@ -44,7 +45,11 @@ ScanOneOpusTag(StringView name, StringView value,
 	       ReplayGainInfo *rgi,
 	       TagHandler &handler) noexcept
 {
-	if (rgi != nullptr && name.Equals("R128_TRACK_GAIN")) {
+	if (value.size >= 4096)
+		/* ignore large values */
+		return;
+
+	if (rgi != nullptr && name.EqualsIgnoreCase("R128_TRACK_GAIN")) {
 		/* R128_TRACK_GAIN is a Q7.8 fixed point number in
 		   dB */
 
@@ -52,7 +57,8 @@ ScanOneOpusTag(StringView name, StringView value,
 		const auto l = ParseInt64(value, &endptr, 10);
 		if (endptr > value.begin() && endptr == value.end())
 			rgi->track.gain = double(l) / 256.;
-	} else if (rgi != nullptr && name.Equals("R128_ALBUM_GAIN")) {
+	} else if (rgi != nullptr &&
+		   name.EqualsIgnoreCase("R128_ALBUM_GAIN")) {
 		/* R128_ALBUM_GAIN is a Q7.8 fixed point number in
 		   dB */
 
@@ -94,9 +100,6 @@ ScanOpusTags(const void *data, size_t size,
 		const auto s = r.ReadString();
 		if (s == nullptr)
 			return false;
-
-		if (s.size >= 4096)
-			continue;
 
 		const auto split = s.Split('=');
 		if (split.first.empty() || split.second.IsNull())

@@ -33,12 +33,13 @@
 #include "plugins/EmbeddedCuePlaylistPlugin.hxx"
 #include "input/InputStream.hxx"
 #include "util/MimeType.hxx"
-#include "util/UriUtil.hxx"
 #include "util/StringUtil.hxx"
 #include "util/StringView.hxx"
-#include "util/Macros.hxx"
+#include "util/UriExtract.hxx"
 #include "config/Data.hxx"
 #include "config/Block.hxx"
+
+#include <iterator>
 
 #include <assert.h>
 
@@ -65,7 +66,7 @@ const struct playlist_plugin *const playlist_plugins[] = {
 };
 
 static constexpr unsigned n_playlist_plugins =
-	ARRAY_SIZE(playlist_plugins) - 1;
+	std::size(playlist_plugins) - 1;
 
 /** which plugins have been initialized successfully? */
 static bool playlist_plugins_enabled[n_playlist_plugins];
@@ -122,7 +123,7 @@ playlist_list_open_uri_scheme(const char *uri, Mutex &mutex,
 
 		if (playlist_plugins_enabled[i] && plugin->open_uri != nullptr &&
 		    plugin->schemes != nullptr &&
-		    StringArrayContainsCase(plugin->schemes, scheme.c_str())) {
+		    StringArrayContainsCase(plugin->schemes, scheme)) {
 			auto playlist = plugin->open_uri(uri, mutex);
 			if (playlist)
 				return playlist;

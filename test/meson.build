@@ -37,6 +37,8 @@ test('TestUtil', executable(
   'TestDivideString.cxx',
   'TestMimeType.cxx',
   'TestSplitString.cxx',
+  'TestUriExtract.cxx',
+  'TestUriQueryParser.cxx',
   'TestUriUtil.cxx',
   'test_byte_reverse.cxx',
   include_directories: inc,
@@ -49,6 +51,8 @@ test('TestUtil', executable(
 test('TestRewindInputStream', executable(
   'TestRewindInputStream',
   'TestRewindInputStream.cxx',
+  '../src/Log.cxx',
+  '../src/LogBackend.cxx',
   include_directories: inc,
   dependencies: [
     input_glue_dep,
@@ -331,6 +335,7 @@ if curl_dep.found()
     '../src/LogBackend.cxx',
     include_directories: inc,
     dependencies: [
+      icu_dep,
       tag_dep,
       gtest_dep,
     ],

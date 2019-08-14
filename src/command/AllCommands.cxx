@@ -41,13 +41,14 @@
 #include "Instance.hxx"
 #include "client/Client.hxx"
 #include "client/Response.hxx"
-#include "util/Macros.hxx"
 #include "util/Tokenizer.hxx"
 #include "util/StringAPI.hxx"
 
 #ifdef ENABLE_SQLITE
 #include "StickerCommands.hxx"
 #endif
+
+#include <iterator>
 
 #include <assert.h>
 #include <string.h>
@@ -167,6 +168,7 @@ static constexpr struct command commands[] = {
 	{ "rangeid", PERMISSION_ADD, 2, 2, handle_rangeid },
 	{ "readcomments", PERMISSION_READ, 1, 1, handle_read_comments },
 	{ "readmessages", PERMISSION_READ, 0, 0, handle_read_messages },
+	{ "readpicture", PERMISSION_READ, 2, 2, handle_read_picture },
 	{ "rename", PERMISSION_CONTROL, 2, 2, handle_rename },
 	{ "repeat", PERMISSION_CONTROL, 1, 1, handle_repeat },
 	{ "replay_gain_mode", PERMISSION_CONTROL, 1, 1,
@@ -208,7 +210,7 @@ static constexpr struct command commands[] = {
 	{ "volume", PERMISSION_CONTROL, 1, 1, handle_volume },
 };
 
-static constexpr unsigned num_commands = ARRAY_SIZE(commands);
+static constexpr unsigned num_commands = std::size(commands);
 
 static bool
 command_available(gcc_unused const Partition &partition,

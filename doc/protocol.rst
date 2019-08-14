@@ -66,7 +66,16 @@ Binary Responses
 Some commands can return binary data.  This is initiated by a line
 containing ``binary: 1234`` (followed as usual by a newline).  After
 that, the specified number of bytes of binary data follows, then a
-newline, and finally the ``OK`` line.  Example::
+newline, and finally the ``OK`` line.
+
+If the object to be transmitted is large, the server may choose a
+reasonable chunk size and transmit only a portion.  Usually, the
+response also contains a ``size`` line which specifies the total
+(uncropped) size, and the command usually has a way to specify an
+offset into the object; this way, the client can copy the whole file
+without blocking the connection for too long.
+
+Example::
 
   foo: bar
   binary: 42
@@ -995,6 +1004,30 @@ The music database
     The meaning of these depends on the codec, and not all
     decoder plugins support it.  For example, on Ogg files,
     this lists the Vorbis comments.
+
+:command:`readpicture {URI} {OFFSET}`
+    Locate a picture for the given song and return a chunk of the
+    image file at offset ``OFFSET``.  This is usually implemented by
+    reading embedded pictures from binary tags (e.g. ID3v2's ``APIC``
+    tag).
+
+    Returns the following values:
+
+    - ``size``: the total file size
+    - ``type``: the file's MIME type (optional)
+    - ``binary``: see :ref:`binary`
+
+    If the song file was recognized, but there is no picture, the
+    response is successful, but is otherwise empty.
+
+    Example::
+
+     readpicture foo/bar.ogg 0
+     size: 1024768
+     type: image/jpeg
+     binary: 8192
+     <8192 bytes>
+     OK
 
 .. _command_search:
 
