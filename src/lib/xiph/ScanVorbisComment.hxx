@@ -17,26 +17,13 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-#include "LogError.hxx"
-#include "Domain.hxx"
-#include "Log.hxx"
+#ifndef MPD_SCAN_VORBIS_COMMENT_HXX
+#define MPD_SCAN_VORBIS_COMMENT_HXX
 
-extern "C" {
-#include <libavutil/error.h>
-}
+struct StringView;
+class TagHandler;
 
 void
-LogFfmpegError(int errnum)
-{
-	char msg[256];
-	av_strerror(errnum, msg, sizeof(msg));
-	LogError(ffmpeg_domain, msg);
-}
+ScanVorbisComment(StringView comment, TagHandler &handler) noexcept;
 
-void
-LogFfmpegError(int errnum, const char *prefix)
-{
-	char msg[256];
-	av_strerror(errnum, msg, sizeof(msg));
-	FormatError(ffmpeg_domain, "%s: %s", prefix, msg);
-}
+#endif

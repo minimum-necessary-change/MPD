@@ -1,5 +1,5 @@
 /*
- * Copyright 2014-2019 Max Kellermann <max.kellermann@gmail.com>
+ * Copyright 2019 Max Kellermann <max.kellermann@gmail.com>
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -27,31 +27,30 @@
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "Parser.hxx"
-#include "Convert.hxx"
+#ifndef BASE64_HXX
+#define BASE64_HXX
 
-#include <stdexcept>
+#include <stddef.h>
 
-#include <assert.h>
-#include <time.h>
+template<typename T> struct WritableBuffer;
+struct StringView;
 
-std::chrono::system_clock::time_point
-ParseTimePoint(const char *s, const char *format)
+constexpr size_t
+CalculateBase64OutputSize(size_t in_size) noexcept
 {
-	assert(s != nullptr);
-	assert(format != nullptr);
-
-#ifdef _WIN32
-	/* TODO: emulate strptime()? */
-	(void)s;
-	(void)format;
-	throw std::runtime_error("Time parsing not implemented on Windows");
-#else
-	struct tm tm{};
-	const char *end = strptime(s, format, &tm);
-	if (end == nullptr || *end != 0)
-		throw std::runtime_error("Failed to parse time stamp");
-
-	return TimeGm(tm);
-#endif /* !_WIN32 */
+	return in_size * 3 / 4;
 }
+
+/**
+ * Throws on error.
+ */
+size_t
+DecodeBase64(WritableBuffer<void> out, StringView in);
+
+/**
+ * Throws on error.
+ */
+size_t
+DecodeBase64(WritableBuffer<void> out, const char *in);
+
+#endif

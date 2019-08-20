@@ -1,5 +1,5 @@
 /*
- * Copyright 2014-2019 Max Kellermann <max.kellermann@gmail.com>
+ * Copyright 2018-2019 Max Kellermann <max.kellermann@gmail.com>
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -27,31 +27,25 @@
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "Parser.hxx"
-#include "Convert.hxx"
+#ifndef MD5_HXX
+#define MD5_HXX
 
-#include <stdexcept>
+#include "util/StringBuffer.hxx"
+#include "util/Compiler.h"
 
-#include <assert.h>
-#include <time.h>
+#include <array>
 
-std::chrono::system_clock::time_point
-ParseTimePoint(const char *s, const char *format)
-{
-	assert(s != nullptr);
-	assert(format != nullptr);
+template<typename T> struct ConstBuffer;
 
-#ifdef _WIN32
-	/* TODO: emulate strptime()? */
-	(void)s;
-	(void)format;
-	throw std::runtime_error("Time parsing not implemented on Windows");
-#else
-	struct tm tm{};
-	const char *end = strptime(s, format, &tm);
-	if (end == nullptr || *end != 0)
-		throw std::runtime_error("Failed to parse time stamp");
+void
+GlobalInitMD5() noexcept;
 
-	return TimeGm(tm);
-#endif /* !_WIN32 */
-}
+gcc_pure
+std::array<uint8_t, 16>
+MD5(ConstBuffer<void> input) noexcept;
+
+gcc_pure
+StringBuffer<33>
+MD5Hex(ConstBuffer<void> input) noexcept;
+
+#endif

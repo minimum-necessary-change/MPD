@@ -1,5 +1,5 @@
 /*
- * Copyright 2014-2019 Max Kellermann <max.kellermann@gmail.com>
+ * Copyright 2018-2019 Max Kellermann <max.kellermann@gmail.com>
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -27,31 +27,44 @@
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "Parser.hxx"
-#include "Convert.hxx"
+#include "MD5.hxx"
+#include "util/HexFormat.hxx"
+#include "config.h"
 
-#include <stdexcept>
-
-#include <assert.h>
-#include <time.h>
-
-std::chrono::system_clock::time_point
-ParseTimePoint(const char *s, const char *format)
-{
-	assert(s != nullptr);
-	assert(format != nullptr);
-
-#ifdef _WIN32
-	/* TODO: emulate strptime()? */
-	(void)s;
-	(void)format;
-	throw std::runtime_error("Time parsing not implemented on Windows");
+#ifdef HAVE_LIBAVUTIL
+extern "C" {
+#include <libavutil/md5.h>
+}
 #else
-	struct tm tm{};
-	const char *end = strptime(s, format, &tm);
-	if (end == nullptr || *end != 0)
-		throw std::runtime_error("Failed to parse time stamp");
+#include "lib/gcrypt/MD5.hxx"
+#include "lib/gcrypt/Init.hxx"
+#endif
 
-	return TimeGm(tm);
-#endif /* !_WIN32 */
+void
+GlobalInitMD5() noexcept
+{
+#ifdef HAVE_LIBAVUTIL
+	/* no initialization necessary */
+#else
+	Gcrypt::Init();
+#endif
+}
+
+std::array<uint8_t, 16>
+MD5(ConstBuffer<void> input) noexcept
+{
+#ifdef HAVE_LIBAVUTIL
+	std::array<uint8_t, 16> result;
+	av_md5_sum(&result.front(), (const uint8_t *)input.data, input.size);
+	return result;
+#else
+	return Gcrypt::MD5(input);
+#endif
+}
+
+StringBuffer<33>
+MD5Hex(ConstBuffer<void> input) noexcept
+{
+	const auto raw = MD5(input);
+	return HexFormatBuffer<raw.size()>(&raw.front());
 }

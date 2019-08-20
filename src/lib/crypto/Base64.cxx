@@ -1,5 +1,5 @@
 /*
- * Copyright 2014-2019 Max Kellermann <max.kellermann@gmail.com>
+ * Copyright 2019 Max Kellermann <max.kellermann@gmail.com>
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -27,31 +27,32 @@
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "Parser.hxx"
-#include "Convert.hxx"
+#include "Base64.hxx"
+#include "lib/ffmpeg/Error.hxx"
+#include "util/StringView.hxx"
+#include "util/WritableBuffer.hxx"
 
-#include <stdexcept>
+extern "C" {
+#include <libavutil/base64.h>
+}
 
-#include <assert.h>
-#include <time.h>
+#include <string>
 
-std::chrono::system_clock::time_point
-ParseTimePoint(const char *s, const char *format)
+size_t
+DecodeBase64(WritableBuffer<void> out, StringView in)
 {
-	assert(s != nullptr);
-	assert(format != nullptr);
+	/* since av_base64_decode() wants a null-terminated string, we
+	   need to make a copy here and null-terminate it */
+	const std::string copy(in.data, in.size);
+	return DecodeBase64(out, copy.c_str());
+}
 
-#ifdef _WIN32
-	/* TODO: emulate strptime()? */
-	(void)s;
-	(void)format;
-	throw std::runtime_error("Time parsing not implemented on Windows");
-#else
-	struct tm tm{};
-	const char *end = strptime(s, format, &tm);
-	if (end == nullptr || *end != 0)
-		throw std::runtime_error("Failed to parse time stamp");
+size_t
+DecodeBase64(WritableBuffer<void> out, const char *in)
+{
+	int nbytes = av_base64_decode((uint8_t *)out.data, in, out.size);
+	if (nbytes < 0)
+		throw MakeFfmpegError(nbytes, "Base64 decoder failed");
 
-	return TimeGm(tm);
-#endif /* !_WIN32 */
+	return nbytes;
 }

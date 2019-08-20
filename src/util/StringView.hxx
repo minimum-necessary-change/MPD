@@ -122,9 +122,39 @@ struct BasicStringView : ConstBuffer<T> {
 	}
 
 	gcc_pure
+	int Compare(BasicStringView<T> other) const noexcept {
+		if (size < other.size) {
+			int result = StringCompare(data, other.data, size);
+			if (result == 0)
+				result = -1;
+			return result;
+		} else if (size > other.size) {
+			int result = StringCompare(data, other.data,
+						   other.size);
+			if (result == 0)
+				result = 1;
+			return result;
+		} else
+			return StringCompare(data, other.data, size);
+	}
+
+	gcc_pure
 	bool Equals(BasicStringView<T> other) const noexcept {
 		return this->size == other.size &&
 			StringIsEqual(data, other.data, this->size);
+	}
+
+	gcc_pure
+	bool StartsWithIgnoreCase(BasicStringView<T> needle) const noexcept {
+		return this->size >= needle.size &&
+			StringIsEqualIgnoreCase(data, needle.data, needle.size);
+	}
+
+	gcc_pure
+	bool EndsWithIgnoreCase(BasicStringView<T> needle) const noexcept {
+		return this->size >= needle.size &&
+			StringIsEqualIgnoreCase(data + this->size - needle.size,
+						needle.data, needle.size);
 	}
 
 	gcc_pure

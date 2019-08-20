@@ -17,26 +17,40 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-#include "LogError.hxx"
-#include "Domain.hxx"
-#include "Log.hxx"
+#include "VorbisPicture.hxx"
+#include "lib/crypto/Base64.hxx"
+#include "tag/Id3Picture.hxx"
+#include "tag/Handler.hxx"
+#include "util/StringView.hxx"
+#include "util/WritableBuffer.hxx"
+#include "config.h"
 
-extern "C" {
-#include <libavutil/error.h>
-}
-
-void
-LogFfmpegError(int errnum)
-{
-	char msg[256];
-	av_strerror(errnum, msg, sizeof(msg));
-	LogError(ffmpeg_domain, msg);
-}
+#include <memory>
 
 void
-LogFfmpegError(int errnum, const char *prefix)
+ScanVorbisPicture(StringView value, TagHandler &handler) noexcept
 {
-	char msg[256];
-	av_strerror(errnum, msg, sizeof(msg));
-	FormatError(ffmpeg_domain, "%s: %s", prefix, msg);
+#ifdef HAVE_BASE64
+	if (value.size > 1024 * 1024)
+		/* ignore image files which are too huge */
+		return;
+
+	size_t debase64_size = CalculateBase64OutputSize(value.size);
+	std::unique_ptr<uint8_t[]> debase64_buffer;
+	debase64_buffer.reset(new uint8_t[debase64_size]);
+
+	try {
+		debase64_size =
+			DecodeBase64({debase64_buffer.get(), debase64_size},
+				     value);
+	} catch (...) {
+		// TODO: log?
+		return;
+	}
+
+	return ScanId3Apic({debase64_buffer.get(), debase64_size}, handler);
+#else
+	(void)value;
+	(void)handler;
+#endif
 }
