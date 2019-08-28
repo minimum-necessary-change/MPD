@@ -226,7 +226,7 @@ of:
   be enclosed in parantheses, e.g. :code:`((artist == 'FOO') AND
   (album == 'BAR'))`
 
-The :command:`find` commands are case sensitive, which
+The :command:`find` commands are case sensitive, while
 :command:`search` and related commands ignore case.
 
 Prior to MPD 0.21, the syntax looked like this::
@@ -839,7 +839,8 @@ The music database
      albumart foo/bar.ogg 0
      size: 1024768
      binary: 8192
-     <8192 bytes>OK
+     <8192 bytes>
+     OK
 
 :command:`count {FILTER} [group {GROUPTYPE}]`
     Count the number of songs and their total playtime in
